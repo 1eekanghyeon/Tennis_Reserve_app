@@ -144,31 +144,6 @@ input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(34,197,94,.18)
 .center{text-align:center}
 .participants{display:flex; flex-wrap:wrap; gap:6px}
 
-/* ─────────────────────────────────────────
-   모바일 최적화
-   ───────────────────────────────────────── */
-@media (max-width:960px){
-  .container{padding:16px}
-  .hello{display:none}                    /* 이름은 모바일에서 숨김 */
-}
-
-@media (max-width:720px){
-  .container{padding:12px}
-  .header{padding:8px 12px}
-  .card,.section{padding:14px; border-radius:12px}
-  .logo-img{width:40px;height:40px}
-  .app-title{font-size:clamp(16px, 5vw, 18px)}  /* 제목이 한 줄에 깔끔하게 */
-  .grid-head,.grid-row{
-    grid-template-columns:96px repeat(3, minmax(120px,1fr));
-    min-width:480px;
-  }
-  .cell{min-height:64px; padding:12px 8px}
-  .cell.time,
-  .grid-head .cell.head:first-child{
-    position:sticky; left:0; z-index:3; background:var(--card-2);
-    box-shadow:2px 0 0 0 var(--border);
-  }
-}
 
 /* 접근성 */
 .skip-link{
