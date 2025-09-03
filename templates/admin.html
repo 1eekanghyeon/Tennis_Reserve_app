@@ -6,8 +6,8 @@
     <p class="muted">예약 현황·기록과 가입자 목록을 한 곳에서 관리하세요.</p>
   </div>
   <div class="admin-actions">
-    <a class="btn outline" href="{{ url_for('admin_export_reservations_csv', from=d_from if d_from is defined else None, to=d_to if d_to is defined else None, court_id=court_id if court_id is defined else None, q=q if q is defined else None) }}">예약 CSV</a>
-    <a class="btn outline" href="{{ url_for('admin_export_users_csv') }}">가입자 CSV</a>
+    <a class="btn outline csv" href="{{ url_for('admin_export_reservations_csv', from=d_from if d_from is defined else None, to=d_to if d_to is defined else None, court_id=court_id if court_id is defined else None, q=q if q is defined else None) }}">예약 CSV 다운</a>
+    <a class="btn outline csv" href="{{ url_for('admin_export_users_csv') }}">가입자 CSV 다운</a>
   </div>
 </section>
 
@@ -63,25 +63,45 @@
   </form>
 
   <div class="card table-card motion-rise">
-    <table class="table-modern">
+    <table class="table-modern users-table">
+      <colgroup>
+        <col style="width:22%">  <!-- 이름 -->
+        <col style="width:28%">  <!-- 이메일 -->
+        <col style="width:14%">  <!-- 소속 -->
+        <col style="width:12%">  <!-- 권한 -->
+        <col style="width:24%">  <!-- 가입일 -->
+      </colgroup>
       <thead>
-        <tr><th>이름</th><th>이메일</th><th>소속</th><th>권한</th><th>가입일</th></tr>
+        <tr>
+          <th>이름</th>
+          <th>이메일</th>
+          <th>소속</th>
+          <th>권한</th>
+          <th>가입일</th>
+        </tr>
       </thead>
       <tbody>
         {% for u in users %}
         <tr>
           <td>{{ u['name'] }}</td>
-          <td class="mono">{{ u['email'] }}</td>
+          <td class="mono" title="{{ u['email'] }}">{{ u['email'] }}</td>
           <td>
             <span class="chip {{ 'green' if u['affiliation']=='student' else 'blue' }}">
               {{ '학생' if u['affiliation']=='student' else '교직원' }}
             </span>
           </td>
-          <td>{% if u['is_admin'] %}<span class="chip purple">관리자</span>{% endif %}</td>
+          <td>
+            {% if u['is_admin'] %}
+              <span class="chip purple">관리자</span>
+            {% else %}
+              <span class="chip">일반</span>
+            {% endif %}
+          </td>
           <td class="mono">{{ u['created_at'] }}</td>
         </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted center">결과가 없습니다.</td></tr>
         {% endfor %}
-        {% if not users %}<tr><td colspan="5" class="muted center">결과가 없습니다.</td></tr>{% endif %}
       </tbody>
     </table>
   </div>
@@ -117,7 +137,7 @@
       </select>
     </label>
     <button class="btn primary">적용</button>
-    <a class="btn ghost" href="{{ url_for('admin_export_reservations_csv', from=d_from, to=d_to, court_id=court_id, q=q) }}">CSV</a>
+    <a class="btn ghost" href="{{ url_for('admin_export_reservations_csv', from=d_from, to=d_to, court_id=court_id, q=q) }}">CSV 다운로드</a>
   </form>
 
   <div class="card table-card motion-rise">

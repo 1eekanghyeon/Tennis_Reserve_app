@@ -367,80 +367,87 @@ def reserve():
     return render_template("reserve.html", target_date=target_date, target_wday=weekday_ko(target_date),
                            slots=slots, courts=courts, reserved_map=reserved_map)
 
-# ---------- Firebase 인증 핸들러 (/auth/firebase) ----------
 @app.post("/auth/firebase")
 def auth_firebase():
-    """
-    로그인 & 가입 공통 엔드포인트.
-    - 토큰 검증 + @jnu.ac.kr + email_verified 필수
-    - 관리자 여부는 ADMIN_EMAILS 화이트리스트로 결정하여 DB is_admin 동기화
-    - affiliation은 'signup 완료' 시에만 반영 (login 호출에서는 덮어쓰지 않음)
-    """
-    data = request.get_json(force=True); id_token = data.get("idToken")
-    if not id_token: return {"ok":False,"error":"토큰 없음"}, 400
+    from flask import abort
+    data = request.get_json(force=True)
+    id_token = data.get("idToken")
+    if not id_token:
+        return {"ok": False, "error": "토큰 없음"}, 400
+
     init_firebase_admin()
     try:
         decoded = fb_auth.verify_id_token(id_token)
     except Exception:
-        return {"ok":False,"error":"토큰 검증 실패"}, 401
+        return {"ok": False, "error": "토큰 검증 실패"}, 401
 
-    email = decoded.get("email"); verified = decoded.get("email_verified", False); uid = decoded.get("uid")
+    email = decoded.get("email")
+    verified = decoded.get("email_verified", False)
+    uid = decoded.get("uid")
     if not email or not verified or not email.endswith("@"+ALLOWED_EMAIL_DOMAIN):
-        return {"ok":False,"error":f"@{ALLOWED_EMAIL_DOMAIN} 인증만 허용됩니다."}, 403
+        return {"ok": False, "error": f"@{ALLOWED_EMAIL_DOMAIN} 인증만 허용됩니다."}, 403
 
-    # 이름
+    # 이름 후보(있을 때만 업데이트에 사용)
     display_name = ""
     try:
-        rec = fb_auth.get_user(uid); display_name = rec.display_name or ""
+        rec = fb_auth.get_user(uid)
+        display_name = rec.display_name or ""
     except Exception:
         pass
     client_name = (data.get("name") or "").strip()
-    name = display_name or client_name or email.split("@")[0]
+    name_for_update = (display_name or client_name).strip()
 
-    # affiliation: signup에서만 전달됨
+    # 소속은 '회원가입 완료' 시에만 반영
     aff_in = data.get("affiliation")
     aff_in = (aff_in or "").lower().strip() if isinstance(aff_in, str) else None
-    if aff_in not in ("student","staff", None): aff_in = None
+    if aff_in not in ("student", "staff", None):
+        aff_in = None
 
-    # 관리자 플래그
     admin_flag = 1 if is_admin_email(email) else 0
 
-    # DB upsert
-    conn=get_db(); cur=conn.cursor(); cur.execute("SELECT * FROM users WHERE email=?", (email,)); row=cur.fetchone()
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE email=?", (email,))
+    row = cur.fetchone()
+
     if not row:
-        aff_new = aff_in if aff_in in ("student","staff") else "student"
+        # 신규 가입: 여기서만 이메일 로컬파트 fallback 허용
+        name_to_store = name_for_update or email.split("@")[0]
+        aff_new = aff_in if aff_in in ("student", "staff") else "student"
         cur.execute(
             "INSERT INTO users(name,email,password_hash,affiliation,is_admin) VALUES (?,?,?,?,?)",
-            (name, email, generate_password_hash(secrets.token_hex(16)), aff_new, admin_flag)
+            (name_to_store, email, generate_password_hash(secrets.token_hex(16)), aff_new, admin_flag)
         )
         conn.commit()
         cur.execute("SELECT * FROM users WHERE email=?", (email,))
         row = cur.fetchone()
     else:
         updates = []
-        if name and row["name"] != name:
-            updates.append(("name", name))
-        if aff_in in ("student","staff") and row["affiliation"] != aff_in:
+        # 🔒 로그인 시에는 명시적으로 전달된 이름이 있을 때만 변경
+        if name_for_update and row["name"] != name_for_update:
+            updates.append(("name", name_for_update))
+        if aff_in in ("student", "staff") and row["affiliation"] != aff_in:
             updates.append(("affiliation", aff_in))
         if int(row["is_admin"]) != admin_flag:
             updates.append(("is_admin", admin_flag))
-        for col,val in updates:
-            cur.execute(f"UPDATE users SET {col}=? WHERE id=?", (val,row["id"]))
-        if updates: conn.commit()
+        for col, val in updates:
+            cur.execute(f"UPDATE users SET {col}=? WHERE id=?", (val, row["id"]))
         if updates:
+            conn.commit()
             cur.execute("SELECT * FROM users WHERE id=?", (row["id"],))
             row = cur.fetchone()
+
     conn.close()
 
-    # Firebase Custom Claims (보조: UI용)
+    # 보조 claims
     try:
         fb_auth.set_custom_user_claims(uid, {"affiliation": row["affiliation"], "admin": bool(row["is_admin"])})
     except Exception:
         pass
 
-    # 세션 로그인
     login_user(User(row["id"], row["name"], row["email"], row["password_hash"], row["is_admin"], row["affiliation"]))
-    return {"ok":True}
+    return {"ok": True}
+
 
 @app.get("/logout", endpoint="logout")
 @login_required
