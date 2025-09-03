@@ -387,17 +387,19 @@ def auth_firebase():
     if not email or not verified or not email.endswith("@"+ALLOWED_EMAIL_DOMAIN):
         return {"ok": False, "error": f"@{ALLOWED_EMAIL_DOMAIN} 인증만 허용됩니다."}, 403
 
-    # 이름 후보(있을 때만 업데이트에 사용)
+    # ---- 이름 후보 수집 ----
     display_name = ""
     try:
         rec = fb_auth.get_user(uid)
         display_name = rec.display_name or ""
     except Exception:
         pass
-    client_name = (data.get("name") or "").strip()
-    name_for_update = (display_name or client_name).strip()
 
-    # 소속은 '회원가입 완료' 시에만 반영
+    client_name = (data.get("name") or "").strip()          # 프론트에서 넘겨준 이름
+    name_for_update = (client_name or display_name).strip() # 우선순위: 폼>Firebase
+    local_part = email.split("@")[0]
+
+    # 소속(선택)
     aff_in = data.get("affiliation")
     aff_in = (aff_in or "").lower().strip() if isinstance(aff_in, str) else None
     if aff_in not in ("student", "staff", None):
@@ -411,8 +413,9 @@ def auth_firebase():
     row = cur.fetchone()
 
     if not row:
-        # 신규 가입: 여기서만 이메일 로컬파트 fallback 허용
-        name_to_store = name_for_update or email.split("@")[0]
+        # ---- 신규 가입: 폼 이름(or Firebase)이 있으면 그걸 쓰고,
+        # 둘 다 없을 때만 로컬파트로 fallback ----
+        name_to_store = name_for_update if name_for_update else local_part
         aff_new = aff_in if aff_in in ("student", "staff") else "student"
         cur.execute(
             "INSERT INTO users(name,email,password_hash,affiliation,is_admin) VALUES (?,?,?,?,?)",
@@ -423,13 +426,22 @@ def auth_firebase():
         row = cur.fetchone()
     else:
         updates = []
-        # 🔒 로그인 시에는 명시적으로 전달된 이름이 있을 때만 변경
-        if name_for_update and row["name"] != name_for_update:
-            updates.append(("name", name_for_update))
+
+        # ---- 이름 업데이트 규칙 ----
+        # 1) 폼에서 이름이 왔고(name_for_update 존재), 지금 DB 이름이 로컬파트/빈값이면 "정정"
+        # 2) 또는 DB 이름과 다르면 갱신 (의도적으로 바꿀 때 반영)
+        if name_for_update:
+            if (row["name"] in ("", None, local_part)) or (row["name"] != name_for_update):
+                updates.append(("name", name_for_update))
+
+        # 소속 갱신(옵션)
         if aff_in in ("student", "staff") and row["affiliation"] != aff_in:
             updates.append(("affiliation", aff_in))
+
+        # 관리자 플래그 동기화(화이트리스트 기반)
         if int(row["is_admin"]) != admin_flag:
             updates.append(("is_admin", admin_flag))
+
         for col, val in updates:
             cur.execute(f"UPDATE users SET {col}=? WHERE id=?", (val, row["id"]))
         if updates:
@@ -439,7 +451,6 @@ def auth_firebase():
 
     conn.close()
 
-    # 보조 claims
     try:
         fb_auth.set_custom_user_claims(uid, {"affiliation": row["affiliation"], "admin": bool(row["is_admin"])})
     except Exception:
@@ -447,6 +458,7 @@ def auth_firebase():
 
     login_user(User(row["id"], row["name"], row["email"], row["password_hash"], row["is_admin"], row["affiliation"]))
     return {"ok": True}
+
 
 
 @app.get("/logout", endpoint="logout")
