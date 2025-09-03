@@ -152,4 +152,61 @@ input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(34,197,94,.18)
   .kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
+/* ===== Mobile polish pack ===== */
+
+/* 0) 유동 타이포 (화면에 맞춰 글자 크기 자동 조절) */
+:root{
+  --fs-xxs: clamp(11px, 2.2vw, 12px);
+  --fs-xs:  clamp(12px, 2.4vw, 13px);
+  --fs-sm:  clamp(13px, 2.8vw, 14px);
+  --fs-md:  clamp(14px, 3.2vw, 16px);
+  --fs-lg:  clamp(16px, 4.0vw, 20px);
+  --fs-xl:  clamp(18px, 4.8vw, 24px);
+}
+body{ font-size: var(--fs-md); }
+.app-title{ font-size: var(--fs-lg); }
+.resv-title, .weekday{ font-size: var(--fs-sm); }
+.small{ font-size: var(--fs-xs); }
+
+/* 1) 터치 타깃(손가락으로 누르기 편하게) + iOS 입력 확대 방지 */
+.btn, .reserve-btn, .cancel-btn{ min-height:44px; padding:10px 14px; }
+input, select, textarea{ font-size:16px; } /* iOS 자동 확대 방지 */
+
+/* 2) 상단·카드 여백 슬림화 (모바일) */
+@media (max-width: 720px){
+  .container{ padding:12px; }
+  .header{ padding:8px 12px; border-radius:10px; }
+  .card,.section{ padding:14px; border-radius:12px; }
+  .rule-chips .chip{ font-size:var(--fs-xs); padding:4px 10px; }
+  .hero-right{ display:none; }
+}
+
+/* 3) 예약표: 가로 스크롤 + 시간 열 고정 (작은 화면에서 표가 깨끗하게 보이도록) */
+@media (max-width: 720px){
+  .grid-wrapper{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  /* 최소 너비를 주어 칸이 너무 좁아지지 않게 */
+  .grid-head, .grid-row{
+    grid-template-columns: 96px repeat(3, minmax(120px, 1fr)); /* 코트 3면 기준 */
+    min-width: 480px;
+  }
+  .cell{ min-height:64px; padding:12px 8px; }
+  /* 왼쪽 시간 칼럼/헤더 고정 */
+  .cell.time,
+  .grid-head .cell.head:first-child{
+    position: sticky; left: 0; z-index: 3;
+    background: var(--card-2);
+    box-shadow: 2px 0 0 0 var(--border);
+  }
+}
+
+/* 4) 저사양/절전 기기에서 애니메이션 줄이기 */
+@media (prefers-reduced-motion: reduce){
+  .motion-fade, .motion-rise, .motion-float{ animation: none !important; }
+}
+
+/* 5) 예약자 목록 줄바꿈/정렬 */
+.resv-user{ text-align:left; word-break:keep-all; }
+.resv-userlist{ gap:2px; }
 
