@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+  <!-- 날짜 선택 -->
+  <section class="hero motion-rise">
+    <div class="hero-left">
+      <h2>날짜 선택</h2>
+      <form method="get" class="date-picker" aria-label="예약 날짜 선택">
+        <div class="date-input">
+          <input type="date" name="date" value="{{ target_date }}" id="date-input" aria-describedby="weekday">
+          <span class="weekday" id="weekday">({{ target_wday }})</span>
+        </div>
+        <button class="btn outline" type="submit">이동</button>
+      </form>
+    </div>
+    <div class="hero-right" aria-hidden="true">
+      <img class="hero-illu motion-float" src="{{ url_for('static', filename='brand/sticker-anim-player.svg') }}" alt="">
+    </div>
+  </section>
+
+  <!-- 예약 그리드 -->
+  <section class="card motion-rise" style="padding:16px;">
+    <div class="grid-wrapper" role="table" aria-label="코트 예약 현황">
+      <div class="grid-head" role="rowgroup">
+        <div class="cell head" role="columnheader">시간/코트</div>
+        {% for c in courts %}
+          <div class="cell head" role="columnheader">{{ c['name'] }}</div>
+        {% endfor %}
+      </div>
+
+      {% for slot in slots %}
+      {% set s = loop.index0 %}
+      <div class="grid-row" role="rowgroup">
+        <div class="cell time" role="rowheader">{{ "%02d:00" % slot[0] }} - {{ "%02d:00" % slot[1] }}</div>
+
+        {% for c in courts %}
+        {% set r = reserved_map.get((c['id'], s)) %}
+        <div
+          class="cell {% if r %}reserved{% else %}available{% endif %}"
+          data-court="{{ c['id'] }}"
+          data-slot="{{ s }}"
+          data-date="{{ target_date }}"
+          role="cell"
+        >
+          {% if r %}
+            <div class="resv">
+              <div class="resv-title">예약됨</div>
+
+              <!-- 참가자 목록 -->
+              {% set plist = r.get('participants') or [{'name': r['user_name'], 'affiliation': r['user_aff']}] %}
+              <div class="resv-userlist">
+                {% for p in plist %}
+                  <div class="resv-user">
+                    {{ p['name'] }}
+                    <span class="muted small">· {{ '학생' if p['affiliation']=='student' else '교직원' }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+
+              {% if current_user.is_authenticated and current_user.id == r['user_id'] %}
+                <button class="cancel-btn" type="button" data-res-id="{{ r['id'] }}" aria-label="내 예약 취소">취소</button>
+              {% endif %}
+            </div>
+          {% else %}
+            <button class="btn primary reserve-trigger" type="button" aria-label="이 시간에 예약">예약</button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <p class="muted small" style="margin-top:8px">
+      <규칙><br>
+      1. 본인 포함 최대 4명까지 함께 할 수 있습니다.<br>
+      2. 예약 가능 시간 06:00~22:00, 1일 2시간 제한.<br>
+      3. 1일 1건 예약, 종료 후 다음 시간 비었을 시 예약 가능.
+    </p>
+  </section>
+
+  <!-- 예약 모달: 추가 참가자 입력 -->
+  <dialog id="reserve-dialog" class="card" style="border:none;border-radius:var(--radius);padding:16px;max-width:560px;">
+    <h3 style="margin-top:0;">참가자 입력 (본인 포함 최대 4명)</h3>
+
+
+    <div class="participant-rows" style="display:grid;gap:8px;">
+      {% for i in range(2,5) %}
+      <div class="row" data-i="{{ i }}" style="display:grid;grid-template-columns: 1fr auto auto;gap:8px;align-items:center;">
+        <input class="auth-input p-name" type="text" placeholder="{{ i }}번 참가자 이름">
+        <label class="pill"><input type="radio" name="p{{ i }}-aff" value="student" checked> 학생</label>
+        <label class="pill"><input type="radio" name="p{{ i }}-aff" value="staff"> 교직원</label>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="row" style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+      <button type="button" class="btn ghost" id="reserve-cancel">취소</button>
+      <button type="button" class="btn primary" id="reserve-submit">예약하기</button>
+    </div>
+  </dialog>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{{ url_for('static', filename='js/reserve-participants.mjs') }}"></script>
+{% endblock %}

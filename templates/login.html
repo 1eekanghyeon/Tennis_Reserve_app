@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section motion-rise" style="max-width:560px;margin:40px auto;">
+  <h2 style="margin:0 0 12px 0;">전남대학교 테니스 코트 예약</h2>
+  <p class="muted" style="margin-top:0;">@jnu.ac.kr 계정으로 로그인하세요.</p>
+
+  <div class="auth-box" style="padding:18px;border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);">
+    <input class="auth-input" type="email" id="fb-email" placeholder="example@jnu.ac.kr" autocomplete="username" required>
+    <input class="auth-input" type="password" id="fb-password" placeholder="비밀번호" autocomplete="current-password" required>
+
+    <div class="row" style="display:flex;gap:10px;align-items:center;margin-top:10px;">
+      <button class="btn primary" id="fb-login" type="button" style="flex:1;">로그인</button>
+      <a class="btn outline" href="{{ url_for('signup') }}">회원가입</a>
+    </div>
+    <p class="muted small" style="margin-top:8px;">이메일 인증이 완료되어야 로그인할 수 있어요.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.FB_CONFIG = {
+      apiKey: "AIzaSyAJbOOOS6FJHxkGf-WrNZm9d2ufjlu9VxM",
+      authDomain: "tennis-64d03.firebaseapp.com",
+      projectId: "tennis-64d03",
+      storageBucket: "tennis-64d03.firebasestorage.app",
+      messagingSenderId: "74973185592",
+      appId: "1:74973185592:web:713af309228589839288cd",
+      measurementId: "G-PZ129C12VE"
+    };
+  </script>
+  <script type="module" src="{{ url_for('static', filename='js/auth-login.mjs') }}"></script>
+{% endblock %}

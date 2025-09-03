@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ APP_NAME }}</title>
+
+  <!-- Webfonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Pretendard:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- Favicons (선택) -->
+  <link rel="icon" href="{{ url_for('static', filename='brand/favicon.ico') }}">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+  <!-- 배경 일러스트 -->
+  <div class="bg">
+    <img class="bg-img parallax" src="{{ url_for('static', filename='brand/bg-anim-court.svg') }}" alt="">
+  </div>
+
+  <!-- 스킵 링크 (접근성) -->
+  <a href="#main" class="skip-link">본문 바로가기</a>
+
+  <!-- 헤더 / 내비게이션 -->
+  <header class="container header motion-fade" role="banner">
+    <!-- 링크 제거: a -> div -->
+    <div class="brand" aria-label="{{ APP_NAME }}">
+      <img src="{{ url_for('static', filename='brand/jnu-logo.png') }}" alt="" class="logo-img" width="44" height="44">
+      <h1 class="app-title">{{ APP_NAME }}</h1>
+    </div>
+
+    <nav class="nav" role="navigation" aria-label="주요 탐색">
+      <button class="btn ghost" id="theme-toggle" type="button" aria-label="테마 전환">🌓</button>
+
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('reserve') }}" class="link">예약</a>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin_dashboard') }}" class="link">관리자 페이지</a>
+        {% endif %}
+        <span class="hello" aria-live="polite">{{ current_user.name }}님</span>
+        <a class="btn outline" href="{{ url_for('logout') }}">로그아웃</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="link">로그인</a>
+        <a class="btn outline" href="{{ url_for('signup') }}">회원가입</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <!-- 본문 -->
+  <main id="main" class="container main motion-rise" role="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes" aria-live="polite">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- 푸터 -->
+  <footer class="container footer motion-fade" role="contentinfo">
+    <p>© 2025 전남대학교 여수캠퍼스 테니스장</p>
+  </footer>
+
+  <!-- 공통 스크립트 -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  <!-- 페이지별 전용 스크립트 -->
+  {% block scripts %}{% endblock %}
+</body>
+</html>

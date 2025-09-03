@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section motion-rise" style="max-width:560px;margin:40px auto;">
+  <h2 style="margin:0 0 12px 0;">회원가입</h2>
+  <p class="muted" style="margin-top:0;">실명과 소속을 입력하고 @jnu.ac.kr 이메일 인증을 완료한 뒤 회원가입을 마무리하세요.</p>
+
+  <div class="auth-box" style="padding:18px;border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);">
+    <input class="auth-input" type="text" id="fb-name" placeholder="이름(실명)" required>
+
+    <div class="aff-pills" style="margin-top:8px;">
+      <input type="radio" id="aff-student" name="fb-aff" value="student" checked>
+      <label for="aff-student">학생</label>
+      <input type="radio" id="aff-staff" name="fb-aff" value="staff">
+      <label for="aff-staff">교직원</label>
+    </div>
+
+    <input class="auth-input" type="email" id="fb-email" placeholder="example@jnu.ac.kr" autocomplete="username" required>
+    <input class="auth-input" type="password" id="fb-password" placeholder="비밀번호(최소 6자)" autocomplete="new-password" required>
+    <input class="auth-input" type="password" id="fb-password2" placeholder="비밀번호 확인" autocomplete="new-password" required>
+
+    <div class="row" style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn primary" id="fb-send-verif" type="button" style="flex:1;">인증메일 발송</button>
+      <button class="btn outline" id="fb-complete" type="button" style="flex:1;" disabled>회원가입 완료</button>
+    </div>
+
+    <p class="muted small" id="signup-help" style="margin-top:8px;">
+      인증메일을 보낸 뒤, 이메일에서 인증을 완료하면 이 페이지가 자동으로 감지하여 ‘회원가입 완료’ 버튼이 활성화됩니다.
+    </p>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.FB_CONFIG = {
+      apiKey: "AIzaSyAJbOOOS6FJHxkGf-WrNZm9d2ufjlu9VxM",
+      authDomain: "tennis-64d03.firebaseapp.com",
+      projectId: "tennis-64d03",
+      storageBucket: "tennis-64d03.firebasestorage.app",
+      messagingSenderId: "74973185592",
+      appId: "1:74973185592:web:713af309228589839288cd",
+      measurementId: "G-PZ129C12VE"
+    };
+  </script>
+  <script type="module" src="{{ url_for('static', filename='js/auth-signup.mjs') }}"></script>
+{% endblock %}

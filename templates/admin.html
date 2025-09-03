@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin-hero motion-rise">
+  <div>
+    <h2 class="admin-title">관리자 대시보드</h2>
+    <p class="muted">예약 현황·기록과 가입자 목록을 한 곳에서 관리하세요.</p>
+  </div>
+  <div class="admin-actions">
+    <a class="btn outline" href="{{ url_for('admin_export_reservations_csv', from=d_from if d_from is defined else None, to=d_to if d_to is defined else None, court_id=court_id if court_id is defined else None, q=q if q is defined else None) }}">예약 CSV</a>
+    <a class="btn outline" href="{{ url_for('admin_export_users_csv') }}">가입자 CSV</a>
+  </div>
+</section>
+
+<section class="kpis motion-rise">
+  <div class="kpi-card">
+    <div class="kpi-label">총 가입자</div>
+    <div class="kpi-value">{{ stats.users_total }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">오늘 예약</div>
+    <div class="kpi-value">{{ stats.res_today }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">최근 7일</div>
+    <div class="kpi-value">{{ stats.res_7d }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">최근 30일</div>
+    <div class="kpi-value">{{ stats.res_30d }}</div>
+  </div>
+</section>
+
+<div class="tabs motion-rise">
+  <a class="tab {{ 'active' if tab=='reservations' else '' }}" href="{{ url_for('admin_dashboard', tab='reservations') }}">예약기록</a>
+  <a class="tab {{ 'active' if tab=='users' else '' }}" href="{{ url_for('admin_dashboard', tab='users') }}">가입자</a>
+</div>
+
+{% if tab == 'users' %}
+  <form method="get" class="toolbar motion-rise">
+    <input type="hidden" name="tab" value="users">
+    <label class="field">
+      <span>검색</span>
+      <input type="text" name="q" placeholder="이름·이메일" value="{{ q or '' }}">
+    </label>
+    <label class="field">
+      <span>소속</span>
+      <select name="aff">
+        <option value="">전체</option>
+        <option value="student" {% if aff=='student' %}selected{% endif %}>학생</option>
+        <option value="staff" {% if aff=='staff' %}selected{% endif %}>교직원</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>페이지</span>
+      <select name="page_size">
+        {% for s in [20,50,100] %}
+        <option value="{{ s }}" {% if page_size==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn primary">적용</button>
+    <a class="btn ghost" href="{{ url_for('admin_export_users_csv') }}">CSV</a>
+  </form>
+
+  <div class="card table-card motion-rise">
+    <table class="table-modern">
+      <thead>
+        <tr><th>이름</th><th>이메일</th><th>소속</th><th>권한</th><th>가입일</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u['name'] }}</td>
+          <td class="mono">{{ u['email'] }}</td>
+          <td>
+            <span class="chip {{ 'green' if u['affiliation']=='student' else 'blue' }}">
+              {{ '학생' if u['affiliation']=='student' else '교직원' }}
+            </span>
+          </td>
+          <td>{% if u['is_admin'] %}<span class="chip purple">관리자</span>{% endif %}</td>
+          <td class="mono">{{ u['created_at'] }}</td>
+        </tr>
+        {% endfor %}
+        {% if not users %}<tr><td colspan="5" class="muted center">결과가 없습니다.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+
+{% else %}
+  <form method="get" class="toolbar motion-rise">
+    <input type="hidden" name="tab" value="reservations">
+    <label class="field">
+      <span>시작일</span>
+      <input type="date" name="from" value="{{ d_from }}">
+    </label>
+    <label class="field">
+      <span>종료일</span>
+      <input type="date" name="to" value="{{ d_to }}">
+    </label>
+    <label class="field">
+      <span>코트</span>
+      <select name="court_id">
+        <option value="">전체</option>
+        {% for c in courts %}<option value="{{ c['id'] }}" {% if court_id==c['id'] %}selected{% endif %}>{{ c['name'] }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span>검색</span>
+      <input type="text" name="q" placeholder="이름·이메일" value="{{ q or '' }}">
+    </label>
+    <label class="field">
+      <span>페이지</span>
+      <select name="page_size">
+        {% for s in [20,50,100] %}
+        <option value="{{ s }}" {% if page_size==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn primary">적용</button>
+    <a class="btn ghost" href="{{ url_for('admin_export_reservations_csv', from=d_from, to=d_to, court_id=court_id, q=q) }}">CSV</a>
+  </form>
+
+  <div class="card table-card motion-rise">
+    <table class="table-modern">
+      <thead>
+        <tr><th style="width:110px;">날짜</th><th style="width:120px;">시간</th><th style="width:120px;">코트</th><th>참가자</th></tr>
+      </thead>
+      <tbody>
+        {% for r in reservations %}
+        {% set slot = slots[r['slot_index']] if slots is defined else None %}
+        <tr>
+          <td class="mono">{{ r['res_date'] }}</td>
+          <td class="mono">{{ "%02d:00-%02d:00" % (slot[0], slot[1]) if slot else r['slot_index'] }}</td>
+          <td>{{ r['court_name'] }}</td>
+          <td class="participants">
+            {% for p in r['participants'] %}
+              <span class="chip {{ 'green' if p['affiliation']=='student' else 'blue' }}">
+                {{ p['name'] }} · {{ '학생' if p['affiliation']=='student' else '교직원' }}
+              </span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not reservations %}<tr><td colspan="4" class="muted center">결과가 없습니다.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

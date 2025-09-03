@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 220" role="img" aria-labelledby="title desc">
+  <title>Cute Tennis Player</title>
+  <desc>Looping forehand swing with a bouncing ball</desc>
+  <style>
+    .shadow { filter: drop-shadow(0 4px 10px rgba(0,0,0,.12)); }
+    .skin { fill: #FFD7B5; }
+    .shirt { fill: #8CF2B0; }
+    .shorts { fill: #2E7D32; }
+    .racket { stroke: #2E7D32; stroke-width: 4; fill: #BDF2A2; }
+    .string { stroke: #ffffff; opacity: .7; }
+    .ball { fill: #22c55e; }
+    @keyframes swing {
+      0%   { transform: rotate(-8deg); }
+      50%  { transform: rotate(15deg); }
+      100% { transform: rotate(-8deg); }
+    }
+    @keyframes blink {
+      0%, 48%, 52%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(.05); }
+    }
+    @keyframes fly {
+      0%   { offset-distance: 0%;   }
+      50%  { offset-distance: 65%;  }
+      100% { offset-distance: 100%; }
+    }
+    .arm { transform-origin: 165px 105px; animation: swing 1.8s ease-in-out infinite; }
+    .eye { transform-origin: center; animation: blink 3.6s linear infinite; }
+    .ballPath { offset-path: path("M 210 90 C 250 60, 300 90, 320 120 S 300 170, 250 150"); animation: fly 1.8s ease-in-out infinite; }
+    @media (prefers-reduced-motion: reduce) {
+      .arm, .eye, .ballPath { animation: none; }
+    }
+  </style>
+
+  <!-- ground pill -->
+  <ellipse cx="180" cy="200" rx="110" ry="12" fill="#a7efc3" opacity=".25"/>
+
+  <!-- body -->
+  <g class="shadow">
+    <circle cx="160" cy="80" r="18" class="skin"/>
+    <rect x="140" y="98" width="40" height="34" rx="10" class="shirt"/>
+    <rect x="145" y="132" width="30" height="20" rx="6" class="shorts"/>
+    <rect x="145" y="152" width="10" height="20" rx="5" fill="#FFD7B5"/>
+    <rect x="165" y="152" width="10" height="20" rx="5" fill="#FFD7B5"/>
+
+    <!-- face -->
+    <g>
+      <rect x="154" y="78" width="6" height="6" rx="3" fill="#1f2937" class="eye"/>
+      <rect x="168" y="78" width="6" height="6" rx="3" fill="#1f2937" class="eye"/>
+      <path d="M 156 90 q8 6 16 0" stroke="#1f2937" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- racket arm -->
+    <g class="arm">
+      <rect x="150" y="100" width="35" height="10" rx="5" class="skin"/>
+      <g transform="translate(182,104) rotate(-10)">
+        <ellipse cx="40" cy="0" rx="28" ry="38" class="racket"/>
+        <g class="string">
+          <path d="M18 -24 L62 24 M18 24 L62 -24 M40 -38 L40 38 M20 -30 L60 30 M20 30 L60 -30" />
+        </g>
+        <rect x="8" y="-4" width="18" height="8" rx="4" fill="#1f2937"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- flying ball -->
+  <g class="ball ballPath">
+    <circle cx="0" cy="0" r="7"/>
+    <path d="M -5 -1 q5 1 10 -1" stroke="#eaffdd" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M -5  1 q5 -1 10  1" stroke="#eaffdd" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
